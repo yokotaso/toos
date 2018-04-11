@@ -1,45 +1,72 @@
 ; hello-os
 ; TAB=4
-DB 0xeb, 0x4e, 0x90 
-DB "HELLOIPL"       ; ブートセレクタの名前
-DW 512              ; 1セレクタの大きさ
-DB 1                ; クラスタの大きさ
-DW 1                ; FATがどこから始まるか
-DB 2                ; FATの個数(2にしなければいけない)
-DW 224              ; ルートディレクトリの大きさ
-DW 2880             ; ドライブの大きさ
-DB 0xf0             ; メディアのタイプ
-DW 9                ; FAT領域の長さ
-DW 18               ; 1トラックあたりのセクタ数
-DW 2                ; ヘッドの数
-DD 0                ; パーティション数
-DD 2880             ; ドライブの大きさ
-DB 0, 0, 0x29       ; 
-DD 0xffffffff       ; ボリュームのシリアル番号
-DB "HELLO-OS   "    ; 
-DB "FAT12   "       ;
-RESB 18
+
+ORG 0x7c00 ; このプログラムがどこに読み込まれるのか
+
+; 以下は標準的なFAT12フォーマットフロッピーディスクのための記述
+
+JMP    entry
+DB    0x90
+DB    "HELLOIPL"           ; ブートセクタの名前を自由に書いてよい（8バイト）
+DW    512                  ; 1セクタの大きさ（512にしなければいけない）
+DB    1                    ; クラスタの大きさ（1セクタにしなければいけない）
+DW    1                    ; FATがどこから始まるか（普通は1セクタ目からにする）
+DB    2                    ; FATの個数（2にしなければいけない）
+DW    224                  ; ルートディレクトリ領域の大きさ（普通は224エントリにする）
+DW    2880                 ; このドライブの大きさ（2880セクタにしなければいけない）
+DB    0xf0                 ; メディアのタイプ（0xf0にしなければいけない）
+DW    9                    ; FAT領域の長さ（9セクタにしなければいけない）
+DW    18                   ; 1トラックにいくつのセクタがあるか（18にしなければいけない）
+DW    2                    ; ヘッドの数（2にしなければいけない）
+DD    0                    ; パーティションを使ってないのでここは必ず0
+DD    2880                 ; このドライブ大きさをもう一度書く
+DB    0,0,0x29             ; よくわからないけどこの値にしておくといいらしい
+DD    0xffffffff           ; たぶんボリュームシリアル番号
+DB    "HELLO-OS   "        ; ディスクの名前（11バイト）
+DB    "FAT12   "           ; フォーマットの名前（8バイト）
+TIMES 18 DB 0x00           ; とりあえず18バイトあけておく
 
 ; プログラム本体
-DB 0xb8, 0x00, 0x00, 0x8e, 0xd0, 0xbc, 0x00, 0x7c
-DB 0x8e, 0xd8, 0x8e, 0xc0, 0xbe, 0x74, 0x7c, 0x8a
-DB 0x04, 0x83, 0xc6, 0x01, 0x3c, 0x00, 0x74, 0x09
-DB 0xb4, 0x0e, 0xbb, 0x0f, 0x00, 0xcd, 0x10, 0xeb
-DB 0xee, 0xf4, 0xeb, 0xfd
 
-; メッセージ部分
-DB 0x0a, 0x0a        ; 改行 2 コ
-DB "hello, world"
-DB 0x0a              ; 改行
-DB 0
+entry:
+    MOV     AX,0           ; レジスタ初期化
+    MOV     SS,AX
+    MOV     SP,0x7c00
+    MOV     DS,AX
+    MOV     ES,AX
 
-RESB 0x1fe-($-$$)    ; 0x001feまで0で埋める
+    MOV     SI,msg
+putloop:
+    MOV     AL,[SI]
+    ADD     SI,1           ; SIに1を足す
+    CMP     AL,0
+    JE      fin
+    MOV     AH,0x0e        ; 一文字表示ファンクション
+    MOV     BX,15          ; カラーコード
+    INT     0x10           ; ビデオBIOS呼び出し
+    JMP     putloop
+fin:
+    HLT                    ; 何かあるまでCPUを停止させる
+    JMP     fin            ; 無限ループ
 
-DB 0x55, 0xaa
+msg:
+    DB      0x0a, 0x0a     ; 改行を2つ
+    DB      "hello, world"
+    DB      0x0a           ; 改行
+    DB      0
 
-; 以下はブートセレクタ以外の部分の記述
-DB 0xf0, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00
-RESB 4600
-DB 0xf0, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00
-RESB 1469432
+    ; 0x7dfeまでを0x00で埋める命令
+    ; `$ - $$` は プログラムの長さを表現している
+    ; 0x7def - ORG - プログラムの長さを表現するもの
+    ; 0で埋める長さ = 0x7def - ORG - プログラムの長さ
+    TIMES      0x7dfe-0x7c00-($-$$) DB 0
 
+    ; 0x7dfe, 0x7dff
+    DB      0x55, 0xaa
+
+; 以下はブートセクタ以外の部分の記述
+
+DB        0xf0, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00
+TIMES    4600 DB 0x00
+DB        0xf0, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00
+TIMES    1469432 DB 0x00
