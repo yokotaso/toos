@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eux
+rm -rfv hello.img
+nasm src/hello.nasm -o hello.img
