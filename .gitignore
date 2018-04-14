@@ -1,3 +1,5 @@
 hello.img
 *.bin
 *.lst
+*.sys
+*.o

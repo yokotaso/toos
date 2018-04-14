@@ -5,7 +5,6 @@ ORG 0x7c00 ; このプログラムがどこに読み込まれるのか
 CYLS EQU 10
 
 ; 以下は標準的なFAT12フォーマットフロッピーディスクのための記述
-
 JMP    entry
 DB    0x90
 DB    "HELLOIPL"           ; ブートセクタの名前を自由に書いてよい（8バイト）
@@ -28,7 +27,6 @@ DB    "FAT12   "           ; フォーマットの名前（8バイト）
 TIMES 18 DB 0x00           ; とりあえず18バイトあけておく
 
 ; プログラム本体
-
 entry:
     MOV     AX,0           ; レジスタ初期化
     MOV     SS,AX
@@ -85,7 +83,7 @@ next:
     ADD CH,1
     CMP CH,CYLS
 
-    ; 全て読み終えたらSuccessを出力して終了
+    ; haribote.nasにジャンプ 
     JMP success
 
 fin:
@@ -94,9 +92,7 @@ fin:
     JMP    fin
 
 success:
-    MOV   SI,success_message
-    JMP   putloop 
-    JMP   fin
+    JMP   0xc200
 
 error:
     MOV    SI,error_message
