@@ -2,6 +2,7 @@
 ; TAB=4
 
 ORG 0x7c00 ; このプログラムがどこに読み込まれるのか
+CYLS EQU 10
 
 ; 以下は標準的なFAT12フォーマットフロッピーディスクのための記述
 
@@ -41,6 +42,7 @@ entry:
     MOV     DH,0           ; ヘッド0
     MOV     CL,2           ; セクタ2
 
+readloop:
     MOV     SI,0           ; 失敗回数を数える
 
 retry:
@@ -49,7 +51,7 @@ retry:
     MOV     BX,0           
     MOV     DL,0x00        ; Aドライブ
     INT     0x13           ; BIOS呼び出し
-    JNC     success            ; エラーがなければfin
+    JNC     next           ; エラーがなければnextへ
     ; 失敗回数を計算して5回以上はエラーへ
     ADD     SI,1           
     CMP     SI,5
@@ -59,6 +61,32 @@ retry:
     MOV     DL,0x00
     INT     0x13
     JMP     retry 
+
+next:
+    ; 0x200進める
+    MOV AX,ES              
+    ADD AX,0x0020
+    MOV ES,AX
+
+    ; セクター
+    ; CL <= 18 なら readloop
+    ADD CL,1
+    CMP CL,18
+    JBE readloop
+
+    ; ヘッダー
+    MOV CL,1
+    ADD DH,1
+    CMP DH,2
+    JB  readloop
+
+    ; シリンダー
+    MOV DH,0
+    ADD CH,1
+    CMP CH,CYLS
+
+    ; 全て読み終えたらSuccessを出力して終了
+    JMP success
 
 fin:
     HLT
