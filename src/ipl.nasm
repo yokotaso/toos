@@ -34,32 +34,71 @@ entry:
     MOV     SP,0x7c00
     MOV     DS,AX
     MOV     ES,AX
+; ディスクをよむ
+    MOV     AX,0x820
+    MOV     ES,AX
+    MOV     CH,0           ; シリンダ0
+    MOV     DH,0           ; ヘッド0
+    MOV     CL,2           ; セクタ2
 
-    MOV     SI,msg
-putloop:
-    MOV     AL,[SI]
-    ADD     SI,1           ; SIに1を足す
-    CMP     AL,0
-    JE      fin
-    MOV     AH,0x0e        ; 一文字表示ファンクション
-    MOV     BX,15          ; カラーコード
-    INT     0x10           ; ビデオBIOS呼び出し
-    JMP     putloop
+    MOV     SI,0           ; 失敗回数を数える
+
+retry:
+    MOV     AH,0x02        ; AH=0x02 ディスク読み込み
+    MOV     AL,1           ; 1セクタ 
+    MOV     BX,0           
+    MOV     DL,0x00        ; Aドライブ
+    INT     0x13           ; BIOS呼び出し
+    JNC     success            ; エラーがなければfin
+    ; 失敗回数を計算して5回以上はエラーへ
+    ADD     SI,1           
+    CMP     SI,5
+    JAE     error
+    MOV     AH,0x00
+    ; 再読み込みの準備 
+    MOV     DL,0x00
+    INT     0x13
+    JMP     retry 
+
 fin:
-    HLT                    ; 何かあるまでCPUを停止させる
-    JMP     fin            ; 無限ループ
+    HLT
+    ; 無限ループ
+    JMP    fin
 
-msg:
-    DB      0x0a, 0x0a     ; 改行を2つ
-    DB      "hello, world"
-    DB      0x0a           ; 改行
-    DB      0
+success:
+    MOV   SI,success_message
+    JMP   putloop 
+    JMP   fin
 
-    ; 0x7dfeまでを0x00で埋める命令
-    ; `$ - $$` は プログラムの長さを表現している
-    ; 0x7def - ORG - プログラムの長さを表現するもの
-    ; 0で埋める長さ = 0x7def - ORG - プログラムの長さ
-    TIMES      0x7dfe-0x7c00-($-$$) DB 0
+error:
+    MOV    SI,error_message
 
-    ; 0x7dfe, 0x7dff
-    DB      0x55, 0xaa
+putloop:
+    MOV	   AL,[SI]
+    ADD	   SI,1            ; SIに1を足す
+    CMP	   AL,0
+    JE	   fin
+    MOV	   AH,0x0e         ; 一文字表示ファンクション
+    MOV	   BX,15           ; カラーコード
+    INT	   0x10            ; ビデオBIOS呼び出し
+    JMP	   putloop
+
+error_message:
+    DB     0x0a, 0x0a      ; 改行を2つ
+    DB     "load error"
+    DB     0x0a            ; 改行
+    DB     0
+
+success_message:
+    DB     0x0a, 0x0a      ; 改行を2つ
+    DB     "load success"
+    DB     0x0a            ; 改行
+    DB     0
+
+; 0x7dfeまでを0x00で埋める命令
+; `$ - $$` は プログラムの長さを表現している
+; 0x7def - ORG - プログラムの長さを表現するもの
+; 0で埋める長さ = 0x7def - ORG - プログラムの長さ
+TIMES      0x7dfe-0x7c00-($-$$) DB 0
+; 0x7dfe, 0x7dff
+DB      0x55, 0xaa

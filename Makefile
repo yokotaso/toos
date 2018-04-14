@@ -8,7 +8,7 @@ image: ipl.bin footer.bin Makefile
 	cat ipl.bin footer.bin > hello.img
 
 run: hello.img
-	(set -eux;qemu-system-i386 -drive file=hello.img,format=raw)
+	(set -eux;qemu-system-i386 -drive file=hello.img,format=raw,index=0,if=floppy)
 
 clean:
 	rm -fv hello.img ipl.* footer.*
