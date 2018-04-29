@@ -2,9 +2,9 @@
 ; TAB=4
 
 ORG 0x7c00 ; このプログラムがどこに読み込まれるのか
+CYLS EQU 10
 
 ; 以下は標準的なFAT12フォーマットフロッピーディスクのための記述
-
 JMP    entry
 DB    0x90
 DB    "HELLOIPL"           ; ブートセクタの名前を自由に書いてよい（8バイト）
@@ -27,39 +27,102 @@ DB    "FAT12   "           ; フォーマットの名前（8バイト）
 TIMES 18 DB 0x00           ; とりあえず18バイトあけておく
 
 ; プログラム本体
-
 entry:
     MOV     AX,0           ; レジスタ初期化
     MOV     SS,AX
     MOV     SP,0x7c00
     MOV     DS,AX
     MOV     ES,AX
+; ディスクをよむ
+    MOV     AX,0x820
+    MOV     ES,AX
+    MOV     CH,0           ; シリンダ0
+    MOV     DH,0           ; ヘッド0
+    MOV     CL,2           ; セクタ2
 
-    MOV     SI,msg
-putloop:
-    MOV     AL,[SI]
-    ADD     SI,1           ; SIに1を足す
-    CMP     AL,0
-    JE      fin
-    MOV     AH,0x0e        ; 一文字表示ファンクション
-    MOV     BX,15          ; カラーコード
-    INT     0x10           ; ビデオBIOS呼び出し
-    JMP     putloop
+readloop:
+    MOV     SI,0           ; 失敗回数を数える
+
+retry:
+    MOV     AH,0x02        ; AH=0x02 ディスク読み込み
+    MOV     AL,1           ; 1セクタ 
+    MOV     BX,0           
+    MOV     DL,0x00        ; Aドライブ
+    INT     0x13           ; BIOS呼び出し
+    JNC     next           ; エラーがなければnextへ
+    ; 失敗回数を計算して5回以上はエラーへ
+    ADD     SI,1           
+    CMP     SI,5
+    JAE     error
+    MOV     AH,0x00
+    ; 再読み込みの準備 
+    MOV     DL,0x00
+    INT     0x13
+    JMP     retry 
+
+next:
+    ; 0x200進める
+    MOV AX,ES              
+    ADD AX,0x0020
+    MOV ES,AX
+
+    ; セクター
+    ; CL <= 18 なら readloop
+    ADD CL,1
+    CMP CL,18
+    JBE readloop
+
+    ; ヘッダー
+    MOV CL,1
+    ADD DH,1
+    CMP DH,2
+    JB  readloop
+
+    ; シリンダー
+    MOV DH,0
+    ADD CH,1
+    CMP CH,CYLS
+
+    ; haribote.nasにジャンプ 
+    JMP success
+
 fin:
-    HLT                    ; 何かあるまでCPUを停止させる
-    JMP     fin            ; 無限ループ
+    HLT
+    ; 無限ループ
+    JMP    fin
 
-msg:
-    DB      0x0a, 0x0a     ; 改行を2つ
-    DB      "hello, world"
-    DB      0x0a           ; 改行
-    DB      0
+success:
+    JMP   0xc200
 
-    ; 0x7dfeまでを0x00で埋める命令
-    ; `$ - $$` は プログラムの長さを表現している
-    ; 0x7def - ORG - プログラムの長さを表現するもの
-    ; 0で埋める長さ = 0x7def - ORG - プログラムの長さ
-    TIMES      0x7dfe-0x7c00-($-$$) DB 0
+error:
+    MOV    SI,error_message
 
-    ; 0x7dfe, 0x7dff
-    DB      0x55, 0xaa
+putloop:
+    MOV	   AL,[SI]
+    ADD	   SI,1            ; SIに1を足す
+    CMP	   AL,0
+    JE	   fin
+    MOV	   AH,0x0e         ; 一文字表示ファンクション
+    MOV	   BX,15           ; カラーコード
+    INT	   0x10            ; ビデオBIOS呼び出し
+    JMP	   putloop
+
+error_message:
+    DB     0x0a, 0x0a      ; 改行を2つ
+    DB     "load error"
+    DB     0x0a            ; 改行
+    DB     0
+
+success_message:
+    DB     0x0a, 0x0a      ; 改行を2つ
+    DB     "load success"
+    DB     0x0a            ; 改行
+    DB     0
+
+; 0x7dfeまでを0x00で埋める命令
+; `$ - $$` は プログラムの長さを表現している
+; 0x7def - ORG - プログラムの長さを表現するもの
+; 0で埋める長さ = 0x7def - ORG - プログラムの長さ
+TIMES      0x7dfe-0x7c00-($-$$) DB 0
+; 0x7dfe, 0x7dff
+DB      0x55, 0xaa
