@@ -1,15 +1,14 @@
-ipl.bin: src/ipl.nasm Makefile
+ipl.bin: src/ipl.nasm
 	nasm src/ipl.nasm -o ipl.bin -l ipl.lst
 
 
-asmhead.bin: src/asmhead.nasm Makefile
+asmhead.bin: src/asmhead.nasm
 	nasm src/asmhead.nasm -o asmhead.bin -l asmhead.lst
 
-nasmfunc.o: src/nasmfunc.nasm
-	nasm -g -f elf src/nasmfunc.nasm -o nasmfunc.o -l nasmfunc.lst
-
-haribote.sys: asmhead.bin nasmfunc.o
-	gcc -march=i486 -m32 -nostdlib -T os.ld src/bootpack.c nasmfunc.o -o bootpack.hrb -Wall 
+haribote.sys: asmhead.bin 
+	nasm -g -f elf32 src/nasmfunc.nasm -o nasmfunc.o -l nasmfunc.lst
+	cc -march=i486 -m32 -nostdlib -c src/bootpack.c -Wall 
+	ld -m elf_i386 -T os.ld bootpack.o nasmfunc.o -o bootpack.hrb
 	cat asmhead.bin bootpack.hrb > haribote.sys
 
 hello.img: ipl.bin haribote.sys Makefile
