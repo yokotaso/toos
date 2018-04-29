@@ -82,8 +82,9 @@ next:
     MOV DH,0
     ADD CH,1
     CMP CH,CYLS
-
+    JB readloop
     ; haribote.nasにジャンプ 
+    MOV [0xff0], CH
     JMP success
 
 fin:
