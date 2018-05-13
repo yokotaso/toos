@@ -33,31 +33,38 @@ void init_palatte(void);
 void set_pallate(int start, int end, unsigned char *rgb);
 
 void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1);
-void init_screen(unsigned char *vram, int x, int y);
+void init_screen8(unsigned char *vram, int x, int y);
 
 void putfont8_asc(unsigned char *vram, int xsize, int x, int y, char c, char *s);
 void putfont8(unsigned char *vram, int xsize, int x, int y,char c,char *font);
 void init_mouse_cursor8(char *mouse, char bc);
+void putblock8_8(unsigned char *vram, int vxsize, int pxsize, int pysize, int px, int py, char *buf, int bxsize);
 int sprintf(char *copy, char *format, ...);
 
 void HariMain(void) {
     struct BOOTINFO *binfo = (struct BOOTINFO *) 0xff0;
     
     init_palatte();
-    init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
+    init_screen8(binfo->vram, binfo->scrnx, binfo->scrny);
+
     putfont8_asc(binfo->vram, binfo->scrnx, 30, 30, COL8_000000, "Haribote OS.");
     putfont8_asc(binfo->vram, binfo->scrnx, 31, 31, COL8_FFFFFF, "Haribote OS.");
 
-    char s[64];
+    char s[64], mcursor[256];
     sprintf(s, "scrnx: %d / scrny: %d", binfo->scrnx, binfo->scrny);
     putfont8_asc(binfo->vram, binfo->scrnx, 16, 64, COL8_FFFFFF, s);
-        
+
+    init_mouse_cursor8(mcursor, COL8_008484);
+
+    int mx = (binfo->scrnx - 16) / 2; /* 画面中央になるように座標計算 */
+    int my = (binfo->scrny - 28 - 16) / 2;
+    putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);    
     for(;;) {
         io_hlt();
     }
 }
 
-void init_screen(unsigned char *vram, int x, int y) {
+void init_screen8(unsigned char *vram, int x, int y) {
     boxfill8(vram, x, COL8_008484,  0,     0,      x -  1, y - 29);
     boxfill8(vram, x, COL8_C6C6C6,  0,     y - 28, x -  1, y - 28);
     boxfill8(vram, x, COL8_FFFFFF,  0,     y - 27, x -  1, y - 27);
@@ -164,7 +171,24 @@ void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, i
 
 
 void init_mouse_cursor8(char *mouse, char bc) {
-    extern char **cursor;
+    static char cursor[16][16] = {
+        "**************..",
+        "*OOOOOOOOOOO*...",
+        "*OOOOOOOOOO*....",
+        "*OOOOOOOOO*.....",
+        "*OOOOOOOO*......",
+        "*OOOOOOO*.......",
+        "*OOOOOOO*.......",
+        "*OOOOOOOO*......",
+        "*OOOO**OOO*.....",
+        "*OOO*..*OOO*....",
+        "*OO*....*OOO*...",
+        "*O*......*OOO*..",
+        "**........*OOO*.",
+        "*..........*OOO*",
+        "............*OO*",
+        ".............***"
+    };
     
     for(int y = 0; y < 16; y++) {
         for(int x = 0; x < 16; x++) {
@@ -179,6 +203,15 @@ void init_mouse_cursor8(char *mouse, char bc) {
             if(cursor[y][x] == '.') {
                mouse[y * 16 + x] = bc;
             }
+        }
+    }
+}
+ 
+void putblock8_8(unsigned char *vram, int vxsize, int pxsize, int pysize, int px0, int py0, char *buf, int bxsize) {
+    int x,y;
+    for(y = 0; y < pysize; y++) {
+        for(x = 0; x < pxsize; x++) {
+            vram[(py0 + y) * vxsize + (px0 +x)] = buf[y * bxsize + x];
         }
     }
 }
