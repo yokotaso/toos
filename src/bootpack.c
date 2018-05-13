@@ -1,14 +1,15 @@
+#include <stdarg.h>
 #define COL8_000000		0
 #define COL8_FF0000		1
 #define COL8_00FF00		2
 #define COL8_FFFF00		3
 #define COL8_0000FF		4
-#define COL8_FF00FF		5
+#define COL8_FF00FF		5 
 #define COL8_00FFFF		6
 #define COL8_FFFFFF		7
-#define COL8_C6C6C6		8
+#define COL8_C6C6C6		8 
 #define COL8_840000		9
-#define COL8_008400		10
+#define COL8_008400		10 
 #define COL8_848400		11
 #define COL8_000084		12
 #define COL8_840084		13
@@ -36,6 +37,8 @@ void init_screen(unsigned char *vram, int x, int y);
 
 void putfont8_asc(unsigned char *vram, int xsize, int x, int y, char c, char *s);
 void putfont8(unsigned char *vram, int xsize, int x, int y,char c,char *font);
+void init_mouse_cursor8(char *mouse, char bc);
+int sprintf(char *copy, char *format, ...);
 
 void HariMain(void) {
     struct BOOTINFO *binfo = (struct BOOTINFO *) 0xff0;
@@ -44,6 +47,11 @@ void HariMain(void) {
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
     putfont8_asc(binfo->vram, binfo->scrnx, 30, 30, COL8_000000, "Haribote OS.");
     putfont8_asc(binfo->vram, binfo->scrnx, 31, 31, COL8_FFFFFF, "Haribote OS.");
+
+    char s[64];
+    sprintf(s, "scrnx: %d / scrny: %d", binfo->scrnx, binfo->scrny);
+    putfont8_asc(binfo->vram, binfo->scrnx, 16, 64, COL8_FFFFFF, s);
+        
     for(;;) {
         io_hlt();
     }
@@ -152,5 +160,76 @@ void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, i
         }
     }
     return;
+}
+
+
+void init_mouse_cursor8(char *mouse, char bc) {
+    extern char **cursor;
+    
+    for(int y = 0; y < 16; y++) {
+        for(int x = 0; x < 16; x++) {
+            if(cursor[y][x] == '*') {
+               mouse[y * 16 + x] = COL8_000000;
+            }
+
+            if(cursor[y][x] == 'O') {
+               mouse[y * 16 + x] = COL8_FFFFFF;
+            }
+
+            if(cursor[y][x] == '.') {
+               mouse[y * 16 + x] = bc;
+            }
+        }
+    }
+}
+
+int dec_to_ascii(char *str, int dec) {
+
+   int max_digits = 1;
+   int digits = 1;
+   while(dec / max_digits > 9) {
+       digits += 1;
+       max_digits *= 10; 
+   }
+   
+   for(int i = 0; i < 3; i++) {
+       int number_at_n_digits = dec / max_digits;
+
+       str[i] = 0x30 + number_at_n_digits; 
+       dec -= number_at_n_digits * max_digits;
+       max_digits = max_digits / 10;
+   }
+
+   return 3;
+}
+
+int sprintf(char *copy, char *format, ...) {
+    va_list list;
+    va_start(list, format);
+    int i = 0, j = 0;
+    while(format[i] != '\0') {
+        if(format[i] == '%') {
+           i++;
+ 
+           if(format[i] == 'd') {
+               int number = va_arg(list, int);
+               int digits = dec_to_ascii(&copy[j], number);
+               // copy[j] なので digits進める
+               // format[i] は dの1文字分
+               i++;
+               j += digits;
+           } 
+
+        } else {
+           copy[j] = format[i];
+
+           i++;
+           j++;
+        }
+    }
+
+    va_end(list);
+    copy[j++] = '\0';
+    return 0;
 }
 
