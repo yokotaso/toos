@@ -34,13 +34,16 @@ void set_pallate(int start, int end, unsigned char *rgb);
 void boxfill8(unsigned char *vram, int xsize, unsigned char c, int x0, int y0, int x1, int y1);
 void init_screen(unsigned char *vram, int x, int y);
 
-// resrouces/hankaku.txtから生成
+void putfont8_asc(unsigned char *vram, int xsize, int x, int y, char c, char *s);
+void putfont8(unsigned char *vram, int xsize, int x, int y,char c,char *font);
+
 void HariMain(void) {
     struct BOOTINFO *binfo = (struct BOOTINFO *) 0xff0;
     
     init_palatte();
     init_screen(binfo->vram, binfo->scrnx, binfo->scrny);
-    putfont8_asc(binfo->vram, binfo->scrnx, 8, 9, COL8_FFFFFF, "HELLO WORLD");
+    putfont8_asc(binfo->vram, binfo->scrnx, 30, 30, COL8_000000, "Haribote OS.");
+    putfont8_asc(binfo->vram, binfo->scrnx, 31, 31, COL8_FFFFFF, "Haribote OS.");
     for(;;) {
         io_hlt();
     }
@@ -98,7 +101,7 @@ void putfont8(unsigned char *vram, int xsize, int x, int y,char c,char *font) {
     }
 }
 
-void putfont8_asc(unsigned char *vram, int xsize, int x, int y, char c, unsigned char *s) {
+void putfont8_asc(unsigned char *vram, int xsize, int x, int y, char c, char *s) {
     extern char hankaku[];
     for(; *s != 0x00; s++) {
         putfont8(vram, xsize, x, y, c, hankaku + *s * 16);
