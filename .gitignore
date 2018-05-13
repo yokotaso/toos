@@ -4,3 +4,5 @@ hello.img
 *.sys
 *.o
 *.hrb
+font.c
+tools/char-to-c/char-to-c
