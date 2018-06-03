@@ -13,7 +13,7 @@ int dec_to_ascii(char *str, int dec) {
        return 1;
    }
    
-   for(int i = 0; i < max_digits; i++) {
+   for(int i = 0; i < digits; i++) {
        int number_at_n_digits = dec / max_digits;
 
        str[i] = 0x30 + number_at_n_digits; 
@@ -21,7 +21,7 @@ int dec_to_ascii(char *str, int dec) {
        max_digits = max_digits / 10;
    }
 
-   return max_digits;
+   return digits;
 }
 
 int sprintf(char *copy, char *format, ...) {
@@ -43,7 +43,6 @@ int sprintf(char *copy, char *format, ...) {
 
         } else {
            copy[j] = format[i];
-
            i++;
            j++;
         }
