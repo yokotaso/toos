@@ -5,6 +5,8 @@
 #include "graphic.h"
 #include "asmhead.h"
 #include "io.h"
+#include "fifo.h"
+
 void init_pic(void);
 void inthandler21(int *esp);
 void inthandler27(int *esp);
