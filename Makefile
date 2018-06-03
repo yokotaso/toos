@@ -11,8 +11,8 @@ font.o: tools/char-to-c resource/hankaku.txt
 
 haribote.sys: asmhead.bin font.o 
 	nasm -g -f elf32 src/nasmfunc.nasm -o nasmfunc.o -l nasmfunc.lst
-	cc -march=i486 -m32 -nostdlib -c src/bootpack.c -Wall 
-	ld -m elf_i386 -T os.ld bootpack.o nasmfunc.o font.o -o bootpack.hrb
+	cc -march=i486 -m32 -nostdlib -I./src -c src/*.c -Wall 
+	ld -m elf_i386 -T os.ld bootpack.o nasmfunc.o font.o io.o graphic.o dsctbl.o -o bootpack.hrb
 	cat asmhead.bin bootpack.hrb > haribote.sys
 
 hello.img: ipl.bin haribote.sys Makefile
