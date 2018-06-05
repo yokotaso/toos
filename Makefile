@@ -19,6 +19,7 @@ haribote.sys: asmhead.bin font.o
         graphic.o \
         dsctbl.o \
         fifo.o \
+	mystdio.o \
         int.o -o bootpack.hrb
 	cat asmhead.bin bootpack.hrb > haribote.sys
 

@@ -1,11 +1,6 @@
 #include "io.h"
 
-struct Padding_Info {
-  int length;
-  char padding;
-};
-
-int dec_to_ascii(char *str, int dec) {
+int dec_to_ascii(char *str, int dec, struct Padding_Info padding_info) {
 
    int max_digits = 1;
    int digits = 1;
@@ -14,20 +9,16 @@ int dec_to_ascii(char *str, int dec) {
        max_digits *= 10; 
    }
 
-   if(max_digits == 1) {
-       str[0] = 0x30 + dec;
-       return 1;
-   }
-   
-   for(int i = 0; i < digits; i++) {
+   int str_pos = fill_padding(str, digits, padding_info);   
+   for(int i = 0; i < digits; i++, str_pos++) {
        int number_at_n_digits = dec / max_digits;
-
-       str[i] = 0x30 + number_at_n_digits; 
+       
+       str[str_pos] = 0x30 + number_at_n_digits; 
        dec -= number_at_n_digits * max_digits;
        max_digits = max_digits / 10;
    }
 
-   return digits;
+   return str_pos;
 }
 
 int dec_to_big_hex(char *str, int dec, struct Padding_Info padding_info) {
@@ -38,13 +29,8 @@ int dec_to_big_hex(char *str, int dec, struct Padding_Info padding_info) {
        digits += 1;
        max_digits *= 16; 
    }
-   int str_pos = 0;
 
-   int padding_length = padding_info.length - digits;
-   for(int i = 0; 0 < padding_length && i < padding_length; i++, str_pos++) {
-       str[str_pos] = padding_info.padding; 
-   }
-    
+   int str_pos = fill_padding(str, digits, padding_info);
    for(int i = 0; i < digits; i++, str_pos++) {
        int number_at_n_digits = dec / max_digits;
        if(number_at_n_digits < 10) {
@@ -60,6 +46,15 @@ int dec_to_big_hex(char *str, int dec, struct Padding_Info padding_info) {
    
 }
 
+int fill_padding(char *str, int num_digits, struct Padding_Info padding_info) {
+   int padding_length = padding_info.length - num_digits;
+   int i = 0;
+   for(; 0 < padding_length && i < padding_length;i++) {
+       str[i] = padding_info.padding; 
+   }
+   return i; 
+}
+
 int parse_padding_info(char* format, struct Padding_Info* padding_info) {
     int str_pos = 0;
     if(format[str_pos] == '0') {
@@ -71,15 +66,14 @@ int parse_padding_info(char* format, struct Padding_Info* padding_info) {
     
     if('1' <= format[str_pos] && format[str_pos] <= '9') {
         padding_info->length = format[str_pos] - 0x30;
-        return str_pos+1;
+        return str_pos + 1;
     } else {
         padding_info->length = 0;
         return 0;
     }
 }
-int sprintf(char *copy, char *format, ...) {
-    va_list list;
-    va_start(list, format);
+
+int __sprintf(char *copy, char *format, va_list list) {
     int i = 0, j = 0;
     struct Padding_Info padding_info;
     while(format[i] != '\0') {
@@ -89,7 +83,7 @@ int sprintf(char *copy, char *format, ...) {
 
            if(format[i] == 'd') {
                int number = va_arg(list, int);
-               int digits = dec_to_ascii(&copy[j], number);
+               int digits = dec_to_ascii(&copy[j], number, padding_info);
                // copy[j] なので digits進める
                // format[i] は dの1文字分
                i++;
@@ -110,7 +104,6 @@ int sprintf(char *copy, char *format, ...) {
         }
     }
 
-    va_end(list);
     copy[j++] = '\0';
     return 0;
 }

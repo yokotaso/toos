@@ -2,7 +2,7 @@
 #include "graphic.h" 
 #include "dsctbl.h"
 #include "nasmfunc.h"
-#include "io.h"
+#include "mystdio.h"
 #include "int.h"
 #include "fifo.h"
 
@@ -68,7 +68,7 @@ void HariMain(void) {
                 if (mouse_decode(&mdec, i) != 0) {
                     /* データが3バイト揃ったので表示 */
                     char s[30];
-                    sprintf(s, "[lcr %d %d]", mdec.x, mdec.y);
+                    sprintf(s, "[lcr %4d %4d]", mdec.x, mdec.y);
                     if((mdec.btn & 0x01) != 0) {
                         s[1] = 'L';
                     }
@@ -79,7 +79,7 @@ void HariMain(void) {
                         s[2] = 'C';
                     }
 
-                    boxfill8(binfo->vram, binfo->scrnx, COL8_008484, 32, 16, 32 + 8 * 8 - 1, 31);
+                    boxfill8(binfo->vram, binfo->scrnx, COL8_008484, 32, 16, 32 + 8 * 15 - 1, 31);
                     putfonts8_asc(binfo->vram, binfo->scrnx, 32, 16, COL8_FFFFFF, s);
                 }
             }
