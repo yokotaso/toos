@@ -2,6 +2,8 @@
 #define IO_H
 
 #include <stdarg.h>
+#include <stdbool.h>
+
 struct Padding_Info {
   int length;
   char padding;

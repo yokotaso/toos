@@ -1,6 +1,11 @@
 #include "io.h"
 
 int dec_to_ascii(char *str, int dec, struct Padding_Info padding_info) {
+   bool minus = false;
+   if(dec < 0) {
+       minus = true;
+       dec = -dec;
+   }
 
    int max_digits = 1;
    int digits = 1;
@@ -9,7 +14,18 @@ int dec_to_ascii(char *str, int dec, struct Padding_Info padding_info) {
        max_digits *= 10; 
    }
 
-   int str_pos = fill_padding(str, digits, padding_info);   
+   if(minus) {
+       digits += 1;
+   }
+
+   int str_pos = fill_padding(str, digits, padding_info);
+
+   if(minus) {
+       str[str_pos] = '-';
+       str_pos++;
+       digits--;
+   }
+
    for(int i = 0; i < digits; i++, str_pos++) {
        int number_at_n_digits = dec / max_digits;
        
