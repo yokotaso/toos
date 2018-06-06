@@ -4,6 +4,7 @@ hello.img
 *.sys
 *.o
 *.hrb
+a.out
 font.c
 cursor.c
 tools/char-to-c/char-to-c
