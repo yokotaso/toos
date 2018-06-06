@@ -22,6 +22,7 @@ static char* test_dec_to_ascii(struct dec_to_ascii_input input, struct dec_to_as
     padding_info.padding = input.padding_char;
 
     char str[256];
+    memset(str, '\0', 256);
     int ret = dec_to_ascii(str, input.dec, padding_info);
 
     mu_assert("method should return length of read characters", ret == expected.length);
@@ -31,7 +32,7 @@ static char* test_dec_to_ascii(struct dec_to_ascii_input input, struct dec_to_as
     return 0;
 }
 
-#define DEC_TO_ASCII_TEST_CASE 7
+#define DEC_TO_ASCII_TEST_CASE 8
 static char* test_dec_to_ascii_parameterized() {
     struct dec_to_ascii_input test_input[DEC_TO_ASCII_TEST_CASE] = {
         {10, 3, ' '},
@@ -41,6 +42,8 @@ static char* test_dec_to_ascii_parameterized() {
         {0, 3, ' '},
         {1234, 3, ' '},
         {-1234, 3, ' '},
+        {1, 3, '0'},
+
     };
 
     struct dec_to_ascii_expected test_expected[DEC_TO_ASCII_TEST_CASE] = {
@@ -51,6 +54,7 @@ static char* test_dec_to_ascii_parameterized() {
         {"  0", 3},
         {"1234", 4},
         {"-1234", 5},
+        {"001", 3},
     };
 
     for(int i = 0; i < DEC_TO_ASCII_TEST_CASE; i++) {
