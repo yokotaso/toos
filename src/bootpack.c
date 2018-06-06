@@ -40,10 +40,6 @@ void HariMain(void) {
     int my = (binfo->scrny - 28 - 16) / 2;
 
     putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);
-    char s[64];
-    sprintf(s, "(%d, %d)", mx, my);
-    putfonts8_asc(binfo->vram, binfo->scrnx, 16, 64, COL8_FFFFFF, s);
-
     struct MOUSE_DEC mdec;
     enable_mouse(&mdec);
 
@@ -81,6 +77,30 @@ void HariMain(void) {
 
                     boxfill8(binfo->vram, binfo->scrnx, COL8_008484, 32, 16, 32 + 8 * 15 - 1, 31);
                     putfonts8_asc(binfo->vram, binfo->scrnx, 32, 16, COL8_FFFFFF, s);
+                    boxfill8(binfo->vram, binfo->scrnx, COL8_008484, mx, my, mx + 15, my + 15);
+                    mx += mdec.x;
+                    my += mdec.y;
+
+                    if(mx < 0) {
+                        mx = 0;
+                    }
+
+                    if(my < 0) {
+                        my = 0;
+                    }
+
+                    if(mx > binfo->scrnx - 16) {
+                        mx = binfo->scrnx -16;
+                    }
+
+                    if(my > binfo->scrny - 16) {
+                        my = binfo->scrny -16;
+                    }
+                    char cursor_position[64];
+                    sprintf(cursor_position, "(%3d, %3d)", mx, my);
+                    boxfill8(binfo->vram, binfo->scrnx, COL8_008484, 0, 0, 79, 15);
+                    putfonts8_asc(binfo->vram, binfo->scrnx, 0, 0, COL8_FFFFFF, cursor_position);
+                    putblock8_8(binfo->vram, binfo->scrnx, 16, 16, mx, my, mcursor, 16);
                 }
             }
         }
