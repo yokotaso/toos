@@ -20,6 +20,8 @@ haribote.sys: asmhead.bin font.o
         dsctbl.o \
         fifo.o \
 	mystdio.o \
+	mouse.o \
+	keyboard.o \
         int.o -o bootpack.hrb
 	cat asmhead.bin bootpack.hrb > haribote.sys
 
