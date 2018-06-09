@@ -7,7 +7,7 @@
 #include "fifo.h"
 #include "mouse.h"
 #include "keyboard.h"
-extern struct FIFO keyinfo;
+extern struct FIFO8 keyinfo;
 extern struct FIFO8 mouseinfo;
 
 void HariMain(void) {
