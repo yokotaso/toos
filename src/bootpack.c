@@ -10,6 +10,66 @@
 extern struct FIFO8 keyinfo;
 extern struct FIFO8 mouseinfo;
 
+#define EFLAGS_AC_BIT 0x00040000
+#define CR0_CACHE_DISABLE 0x60000000
+unsigned int memtest_sub(unsigned int start, unsigned int end) {
+    unsigned int *p, old, pat0 = 0xaa55aa55, pat1 = 0x55aa55aa;
+    unsigned mem_position = start;
+    for(unsigned int i = start; i <= end; i+=4, mem_position = i) {
+        p = (unsigned int *)i;
+        old = *p;
+        *p = pat0;
+        *p ^= 0xffffffff;
+        if(*p != pat1) {
+not_memory:
+            *p = old;
+            break;
+        }
+     
+        *p ^= 0xffffffff;
+        if(*p != pat0) {
+            goto not_memory;
+        }
+        *p = old;
+    }
+    return mem_position; 
+}
+
+unsigned int memtest(unsigned int start, unsigned int end) {
+    char flg486;
+    unsigned int eflg, cr0, i;
+
+
+    eflg = io_load_eflags();
+    eflg |= EFLAGS_AC_BIT;
+  
+    io_store_eflags(eflg);
+    eflg = io_load_eflags();
+ 
+    if((eflg & EFLAGS_AC_BIT) != 0) {
+        flg486 = 1;
+    }
+
+    eflg &= ~EFLAGS_AC_BIT;
+    io_store_eflags(eflg);
+ 
+    if(flg486 != 0) {
+        cr0 = load_cr0();
+        cr0 |= CR0_CACHE_DISABLE;
+        store_cr0(cr0);
+    }
+ 
+    i = memtest_sub(start, end);
+    
+    if(flg486 != 0) {
+        cr0 = load_cr0();
+        cr0 &= ~CR0_CACHE_DISABLE;
+        store_cr0(cr0);
+    }
+   
+    return i;
+}
+
 void HariMain(void) {
     struct BOOTINFO *binfo = (struct BOOTINFO *) 0xff0;
 
@@ -38,6 +98,12 @@ void HariMain(void) {
     unsigned char keybuf[32], mousebuf[128]; 
     fifo8_init(&keyinfo, 32 ,keybuf);
     fifo8_init(&mouseinfo, 128 ,mousebuf);
+    
+    char memory_test[32];
+    int num_of_memory = memtest(0x00400000, 0xbfffffff) / (1024 * 1024);
+    sprintf(memory_test, "memory %dMB", num_of_memory);
+    putfonts8_asc(binfo->vram, binfo->scrnx, 0, 32, COL8_FFFFFF, memory_test);
+
     for (;;) {
         io_cli();
         if (fifo8_status(&keyinfo) + fifo8_status(&mouseinfo) == 0) {
@@ -98,6 +164,5 @@ void HariMain(void) {
         }
     }
 }
-
 
 
