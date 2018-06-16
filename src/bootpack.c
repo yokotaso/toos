@@ -8,8 +8,12 @@
 #include "mouse.h"
 #include "keyboard.h"
 #include "memory.h"
+
+#define MEMMAN_ADDR 0x003c0000
+
 extern struct FIFO8 keyinfo;
 extern struct FIFO8 mouseinfo;
+
 
 void HariMain(void) {
     struct BOOTINFO *binfo = (struct BOOTINFO *) 0xff0;
@@ -39,10 +43,17 @@ void HariMain(void) {
     unsigned char keybuf[32], mousebuf[128]; 
     fifo8_init(&keyinfo, 32 ,keybuf);
     fifo8_init(&mouseinfo, 128 ,mousebuf);
-    
-    char memory_test[32];
-    int num_of_memory = memtest(0x00400000, 0xbfffffff) / (1024 * 1024);
-    sprintf(memory_test, "memory %dMB", num_of_memory);
+
+
+    struct MEMMAN *memman = (struct MEMMAN *) MEMMAN_ADDR;
+    char memory_test[128];
+
+    unsigned int memtotal = memtest(0x00400000, 0xbfffffff);
+    memman_init(memman);
+    memman_free(memman, 0x00001000, 0x0009e000);
+    memman_free(memman, 0x00400000, memtotal - 0x00400000);
+
+    sprintf(memory_test, "memory %dMB free : %dKB", memtotal / (1024 * 1024), memman_total(memman) / 1024);
     putfonts8_asc(binfo->vram, binfo->scrnx, 0, 32, COL8_FFFFFF, memory_test);
 
     for (;;) {
