@@ -1,3 +1,6 @@
+
+CC_FILES := $(wildcard src/*.c)
+CC_OPT_FILES := $(filter-out src/memory.c, $(CC_FILES))
 ipl.bin: src/ipl.nasm
 	nasm src/ipl.nasm -o ipl.bin -l ipl.lst
 
@@ -11,7 +14,8 @@ font.o: tools/char-to-c resource/hankaku.txt
 
 haribote.sys: asmhead.bin font.o 
 	nasm -g -f elf32 src/nasmfunc.nasm -o nasmfunc.o -l nasmfunc.lst
-	cc -march=i486 -m32 -nostdlib -I./src -c src/*.c -Wall 
+	cc -march=i486 -m32 -nostdlib -I./src -c src/memory.c -Wall 
+	cc -O3 -march=i486 -m32 -nostdlib -I./src -c ${CC_OPT_FILES} -Wall 
 	ld -m elf_i386 -T os.ld bootpack.o \
         nasmfunc.o \
         font.o \
@@ -20,6 +24,9 @@ haribote.sys: asmhead.bin font.o
         dsctbl.o \
         fifo.o \
 	mystdio.o \
+	mouse.o \
+	keyboard.o \
+	memory.o \
         int.o -o bootpack.hrb
 	cat asmhead.bin bootpack.hrb > haribote.sys
 

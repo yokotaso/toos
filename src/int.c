@@ -22,28 +22,6 @@ void init_pic(void)
     return;
 }
 
-extern struct FIFO8 keyinfo;
-/* PS/2キーボードからの割り込み */
-void inthandler21(int *esp)
-{
-    io_out8(PIC0_OCW2, 0x61);
-    int data = io_in8(PORT_KEYDAT);
-    fifo8_put(&keyinfo, data);
-    return;
-}
-
-
-extern struct FIFO8 mouseinfo;
-/* PS/2マウスからの割り込み */
-void inthandler2c(int *esp)
-{
-    io_out8(PIC1_OCW2, 0x64);
-    io_out8(PIC0_OCW2, 0x62);
-    unsigned char data = io_in8(PORT_KEYDAT);
-    fifo8_put(&mouseinfo, data);
-    return;
-}
-
 /* PIC0からの不完全割り込み対策 */
 /* Athlon64X2機などではチップセットの都合によりPICの初期化時にこの割り込みが1度だけおこる */
 /* この割り込み処理関数は、その割り込みに対して何もしないでやり過ごす */
